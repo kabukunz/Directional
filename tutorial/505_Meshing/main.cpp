@@ -20,7 +20,9 @@
 #include <directional/integrate.h>
 #include <directional/cut_mesh_with_singularities.h>
 #include <directional/branched_isolines.h>
+
 #include <directional/mesh_function_isolines.h>
+
 #include <directional/setup_mesh_function_isolines.h>
 #include "polygonal_write_OFF.h"
 
@@ -115,11 +117,17 @@ int main()
   
   //combing and cutting
   for (int i=0;i<NUM_N;i++){
+    
+    // principal matching
     directional::principal_matching(VMeshWhole, FMeshWhole,EV, EF, FE, rawField[i], matching[i], effort[i]);
+
+    // singularities
     directional::effort_to_indices(VMeshWhole,FMeshWhole,EV, EF, effort[i],matching[i], N[i],singVertices[i], singIndices[i]);
     
-    directional::IntegrationData intData(N[i]);
+    // integration
     std::cout<<"Setting up Integration #"<<i<<std::endl;
+    
+    directional::IntegrationData intData(N[i]);
     directional::setup_integration(VMeshWhole, FMeshWhole,  EV, EF, FE, rawField[i], matching[i], singVertices[i], intData, VMeshCut[i], FMeshCut[i], combedField[i], combedMatching[i]);
     
     intData.verbose=false;
@@ -127,6 +135,7 @@ int main()
     intData.roundSeams=false;
   
     std::cout<<"Solving integration for N="<<N[i]<<std::endl;
+    
     directional::integrate(VMeshWhole, FMeshWhole, FE, combedField[i],  intData, VMeshCut[i], FMeshCut[i], NFunction[i],NCornerFunction[i]);
     
     std::cout<<"Done!"<<std::endl;
@@ -135,10 +144,17 @@ int main()
     directional::MeshFunctionIsolinesData mfiData;
     directional::setup_mesh_function_isolines(VMeshCut[i], FMeshCut[i], intData, mfiData);
     
-    //meshing and saving
+    //meshing
     directional::mesh_function_isolines(VMeshWhole, FMeshWhole,EV, EF, FE, mfiData,  verbose, VPolyMesh[i], DPolyMesh[i], FPolyMesh[i]);
+    
+    //saving
     hedra::polygonal_write_OFF(TUTORIAL_SHARED_PATH "/vase-"+std::to_string(N[i])+"-generated.off", VPolyMesh[i], DPolyMesh[i], FPolyMesh[i]);
     
+
+    
+    
+    // GUI
+
     //raw field mesh
     directional::glyph_lines_raw(VMeshWhole, FMeshWhole, combedField[i], directional::indexed_glyph_colors(combedField[i]), VField[i], FField[i], CField[i],1.0);
     

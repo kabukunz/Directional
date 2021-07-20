@@ -21,28 +21,33 @@
 #include <utility>
 #include <iostream>
 #include <fstream>
-#include <boost/config.hpp>
+
+// #include <boost/config.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/connected_components.hpp>
-#include <CGAL/Arr_linear_traits_2.h>
-#include <CGAL/Arrangement_2.h>
-#include <CGAL/Arr_extended_dcel.h>
-#include <CGAL/Arr_overlay_2.h>
-#include <CGAL/Arr_default_overlay_traits.h>
-#include <CGAL/Arr_linear_traits_2.h>
-#include <CGAL/Orthogonal_k_neighbor_search.h>
-#include <CGAL/Arr_linear_traits_2.h>
-#include <CGAL/Bbox_3.h>
-#include <CGAL/number_utils.h>
-#include <CGAL/Arrangement_with_history_2.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Simple_cartesian.h>
-#include <CGAL/Search_traits_2.h>
-#include <CGAL/Polyhedron_3.h>
-#include <CGAL/Polygon_2.h>
+
+// #include <CGAL/Arrangement_2.h>
+// #include <CGAL/Arr_overlay_2.h>
+// #include <CGAL/Arr_default_overlay_traits.h>
+// #include <CGAL/Orthogonal_k_neighbor_search.h>
+// #include <CGAL/number_utils.h>
+// #include <CGAL/Search_traits_2.h>
+
+#include <CGAL/Bbox_3.h> // LGPL
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h> // LGPL
+#include <CGAL/Simple_cartesian.h> // LGPL
+#include <CGAL/Polygon_2.h> // LGPL
+
+#include <CGAL/Arr_linear_traits_2.h>        // GPL
+#include <CGAL/Arr_extended_dcel.h>          // GPL
+#include <CGAL/Arrangement_with_history_2.h> // GPL
+#include <CGAL/Polyhedron_3.h>               // GPL
+
 #include <Eigen/Sparse>
 #include <Eigen/Dense>
+
 #include <igl/PI.h>
+
 #include <directional/FunctionMesh.h>
 
 namespace directional{
