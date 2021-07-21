@@ -33,7 +33,8 @@ int currN = 0;
 Eigen::MatrixXi FMeshWhole, FMeshCut[NUM_N], FField[NUM_N], FSings[NUM_N], FSeams[NUM_N], FIso[NUM_N];
 Eigen::MatrixXd VMeshWhole, VMeshCut[NUM_N], VField[NUM_N], VSings[NUM_N], VSeams[NUM_N], VIso[NUM_N];
 Eigen::MatrixXd CField[NUM_N], CSeams[NUM_N], CSings[NUM_N], CIso[NUM_N];
-Eigen::MatrixXd rawField[NUM_N], combedField[NUM_N], barycenters;
+Eigen::MatrixXd rawField[NUM_N], combedField[NUM_N];
+// Eigen::MatrixXd rawField[NUM_N], combedField[NUM_N], barycenters;
 Eigen::VectorXd effort[NUM_N], combedEffort[NUM_N];
 Eigen::VectorXi matching[NUM_N], combedMatching[NUM_N];
 Eigen::MatrixXi EV, FE, EF;
@@ -111,19 +112,27 @@ int main()
 //   directional::read_raw_field(TUTORIAL_SHARED_PATH "/vase-7.rawfield", N[1], rawField[1]);
 //   directional::read_raw_field(TUTORIAL_SHARED_PATH "/vase-11.rawfield", N[2], rawField[2]);
   igl::edge_topology(VMeshWhole, FMeshWhole, EV, FE, EF);
-  igl::barycenter(VMeshWhole, FMeshWhole, barycenters);
+//   igl::barycenter(VMeshWhole, FMeshWhole, barycenters);
   
   bool verbose=true;
   
   //combing and cutting
   for (int i=0;i<NUM_N;i++){
     
+    
+    // COMBING
+
+
     // principal matching
     directional::principal_matching(VMeshWhole, FMeshWhole,EV, EF, FE, rawField[i], matching[i], effort[i]);
 
     // singularities
     directional::effort_to_indices(VMeshWhole,FMeshWhole,EV, EF, effort[i],matching[i], N[i],singVertices[i], singIndices[i]);
     
+
+    // INTEGRATION
+
+
     // integration
     std::cout<<"Setting up Integration #"<<i<<std::endl;
     
@@ -139,6 +148,12 @@ int main()
     directional::integrate(VMeshWhole, FMeshWhole, FE, combedField[i],  intData, VMeshCut[i], FMeshCut[i], NFunction[i],NCornerFunction[i]);
     
     std::cout<<"Done!"<<std::endl;
+
+
+    // MESHING
+
+
+    // The meshing unit is independent from the integration unit, and can be potentially used with external functions; one should fill the MeshFunctionIsolinesData structure with the input, and call mesh_function_isolines().    
     
     //setting up mesh data from itnegration data
     directional::MeshFunctionIsolinesData mfiData;
@@ -147,13 +162,16 @@ int main()
     //meshing
     directional::mesh_function_isolines(VMeshWhole, FMeshWhole,EV, EF, FE, mfiData,  verbose, VPolyMesh[i], DPolyMesh[i], FPolyMesh[i]);
     
+
+    
+    // SAVING
+
+
     //saving
     hedra::polygonal_write_OFF(TUTORIAL_SHARED_PATH "/vase-"+std::to_string(N[i])+"-generated.off", VPolyMesh[i], DPolyMesh[i], FPolyMesh[i]);
     
-
     
-    
-    // GUI
+    // SHOWING
 
     //raw field mesh
     directional::glyph_lines_raw(VMeshWhole, FMeshWhole, combedField[i], directional::indexed_glyph_colors(combedField[i]), VField[i], FField[i], CField[i],1.0);
