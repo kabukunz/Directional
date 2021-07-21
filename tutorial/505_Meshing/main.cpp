@@ -34,7 +34,6 @@ Eigen::MatrixXi FMeshWhole, FMeshCut, FField, FSings, FSeams, FIso;
 Eigen::MatrixXd VMeshWhole, VMeshCut, VField, VSings, VSeams, VIso;
 Eigen::MatrixXd CField, CSeams, CSings, CIso;
 Eigen::MatrixXd rawField, combedField;
-// Eigen::MatrixXd rawField, combedField, barycenters;
 Eigen::VectorXd effort, combedEffort;
 Eigen::VectorXi matching, combedMatching;
 Eigen::MatrixXi EV, FE, EF;
@@ -93,7 +92,7 @@ bool key_down(igl::opengl::glfw::Viewer& viewer, int key, int modifiers)
       // Select vector
     case '1': viewingMode = FIELD; break;
     case '2': viewingMode = INTEGRATION; break;
-    case '3': currN=(currN+1)%NUM_N; break;
+    // case '3': currN=(currN+1)%NUM_N; break;
   }
   update_raw_field_mesh();
   return true;
@@ -109,10 +108,7 @@ int main()
   
   igl::readOFF(TUTORIAL_SHARED_PATH "/vase.off", VMeshWhole, FMeshWhole);
   directional::read_raw_field(TUTORIAL_SHARED_PATH "/vase-4.rawfield", N, rawField);
-//   directional::read_raw_field(TUTORIAL_SHARED_PATH "/vase-7.rawfield", N[1], rawField[1]);
-//   directional::read_raw_field(TUTORIAL_SHARED_PATH "/vase-11.rawfield", N[2], rawField[2]);
   igl::edge_topology(VMeshWhole, FMeshWhole, EV, FE, EF);
-//   igl::barycenter(VMeshWhole, FMeshWhole, barycenters);
   
   bool verbose=true;
   
