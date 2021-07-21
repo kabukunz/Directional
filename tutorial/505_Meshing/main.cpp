@@ -53,32 +53,32 @@ ViewingModes viewingMode=FIELD;
 void update_raw_field_mesh()
 {
   for (int i=1;i<=3;i++)  //hide all other meshes
-    viewer.data_list.show_faces=(viewingMode==FIELD);
+    viewer.data_list[i].show_faces=(viewingMode==FIELD);
   
   viewer.data_list[4].show_faces=(viewingMode==INTEGRATION);
   
   if (viewingMode==FIELD){
     viewer.data_list[1].clear();
-    viewer.data_list[1].set_mesh(VField[currN], FField[currN]);
-    viewer.data_list[1].set_colors(CField[currN]);
+    viewer.data_list[1].set_mesh(VField, FField);
+    viewer.data_list[1].set_colors(CField);
     viewer.data_list[1].show_faces = true;
     viewer.data_list[1].show_lines = false;
     
     viewer.data_list[2].clear();
-    viewer.data_list[2].set_mesh(VSings[currN], FSings[currN]);
-    viewer.data_list[2].set_colors(CSings[currN]);
+    viewer.data_list[2].set_mesh(VSings, FSings);
+    viewer.data_list[2].set_colors(CSings);
     viewer.data_list[2].show_faces = true;
     viewer.data_list[2].show_lines = false;
     
     viewer.data_list[3].clear();
-    viewer.data_list[3].set_mesh(VSeams[currN], FSeams[currN]);
-    viewer.data_list[3].set_colors(CSeams[currN]);
+    viewer.data_list[3].set_mesh(VSeams, FSeams);
+    viewer.data_list[3].set_colors(CSeams);
     viewer.data_list[3].show_faces = true;
     viewer.data_list[3].show_lines = false;
   } else {
     viewer.data_list[4].clear();
-    viewer.data_list[4].set_mesh(VIso[currN], FIso[currN]);
-    viewer.data_list[4].set_colors(CIso[currN]);
+    viewer.data_list[4].set_mesh(VIso, FIso);
+    viewer.data_list[4].set_colors(CIso);
     viewer.data_list[4].show_faces = true;
     viewer.data_list[4].show_lines = false;
   }
@@ -136,7 +136,7 @@ int main()
     // integration
     std::cout<<"Setting up Integration #"<<i<<std::endl;
     
-    directional::IntegrationData intData;
+    directional::IntegrationData intData(N);
     directional::setup_integration(VMeshWhole, FMeshWhole,  EV, EF, FE, rawField, matching, singVertices, intData, VMeshCut, FMeshCut, combedField, combedMatching);
     
     intData.verbose=false;
@@ -203,7 +203,7 @@ int main()
       for (int j=0;j<3;j++)
         if (intData.face2cut(i,j))
           isSeam(FE(i,j))=1;
-    directional::seam_lines(VMeshWhole, FMeshWhole, EV, combedMatching, VSeams, FSeams, CSeams,2.5);
+    directional::seam_lines(VMeshWhole, FMeshWhole, EV, combedMatching, VSeams, FSeams, CSeams, 2.5);
     
     if (i==0){
       viewer.append_mesh();
