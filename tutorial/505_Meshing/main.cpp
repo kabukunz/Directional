@@ -122,6 +122,7 @@ int main(int argc, char *argv[])
     }
 
     std::string cmdlineFile = argv[1];
+    std::string dataDir = "/Users/max/Developer/Content/Data/"s;
     infilename = "/Users/max/Developer/Content/Data/" + cmdlineFile + ".off";
     rawfieldname = "/Users/max/Developer/Content/Data/" + cmdlineFile + ".rawfield";
     outfilename = "/Users/max/Developer/Content/Data/" + cmdlineFile + "-generated.off";
