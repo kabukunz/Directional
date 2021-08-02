@@ -122,10 +122,11 @@ int main(int argc, char *argv[])
     }
 
     std::string cmdlineFile = argv[1];
-    std::string dataDir = "/Users/max/Developer/Content/Data/"s;
-    infilename = "/Users/max/Developer/Content/Data/" + cmdlineFile + ".off";
-    rawfieldname = "/Users/max/Developer/Content/Data/" + cmdlineFile + ".rawfield";
-    outfilename = "/Users/max/Developer/Content/Data/" + cmdlineFile + "-generated.off";
+
+    std::string dataDir = std::string("C:\\Users\\kabukunz\\Developer\\Content\\Data\\");
+    infilename = dataDir + cmdlineFile + ".off";
+    rawfieldname = dataDir + cmdlineFile + ".rawfield";
+    outfilename = dataDir + cmdlineFile + "-generated.off";
 
     igl::readOFF(infilename, VMeshWhole, FMeshWhole);
     directional::read_raw_field(rawfieldname, N, rawField);
