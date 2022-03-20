@@ -19,9 +19,12 @@
 #include <directional/directional_viewer.h>
 #include "polygonal_write_OFF.h"
 
+#include <igl/Timer.h>
+#include <string>
+
 #define NUM_N 1
 
-int N;
+int N = 4;
 int currN = 0;
 Eigen::MatrixXi FMeshWhole, FMeshCut, FField, FSings, FSeams, FIso;
 Eigen::MatrixXd VMeshWhole, VMeshCut, VField, VSings, VSeams, VIso;
@@ -41,6 +44,8 @@ directional::DirectionalViewer viewer;
 igl::Timer timer;
 std::string infilename, rawfieldname, outfilename;
 double elapsed;
+
+
 
 // #define NUM_N 3
 
@@ -112,26 +117,24 @@ ViewingModes viewingMode = FIELD;
 
 void update_viewer()
 {
-    for (int i = 0; i < NUM_N; i++)
-    {
-        viewer.toggle_field(false, i);
-        viewer.toggle_singularities(false, i);
-        viewer.toggle_seams(false, i);
-        viewer.toggle_isolines(false, i);
-    }
+    viewer.toggle_field(false);
+    viewer.toggle_singularities(false);
+    viewer.toggle_seams(false);
+    viewer.toggle_isolines(false);
+    
     if (viewingMode == FIELD)
     {
-        viewer.toggle_field(true, currN);
-        viewer.toggle_singularities(true, currN);
-        viewer.toggle_seams(true, currN);
-        viewer.toggle_isolines(false, currN);
+        viewer.toggle_field(true);
+        viewer.toggle_singularities(true);
+        viewer.toggle_seams(true);
+        viewer.toggle_isolines(false);
     }
     else
     {
-        viewer.toggle_field(false, currN);
-        viewer.toggle_singularities(false, currN);
-        viewer.toggle_seams(false, currN);
-        viewer.toggle_isolines(true, currN);
+        viewer.toggle_field(false);
+        viewer.toggle_singularities(false);
+        viewer.toggle_seams(false);
+        viewer.toggle_isolines(true);
     }
 }
 
@@ -189,8 +192,8 @@ int main(int argc, char *argv[])
     std::string dataDir = std::string("/Users/max/Developer/Content/Data/");
 
     infilename = dataDir + cmdlineFile + ".off";
-    rawfieldname = dataDir + cmdlineFile + ".rawfield";
-    outfilename = dataDir + cmdlineFile + "-generated.off";
+    rawfieldname = dataDir + cmdlineFile + "-" + std::to_string(N) + ".rawfield";
+    outfilename = dataDir + cmdlineFile + "-" + std::to_string(N) + "-generated.off";
 
     igl::readOFF(infilename, VMeshWhole, FMeshWhole);
     directional::read_raw_field(rawfieldname, N, rawField);
@@ -214,21 +217,21 @@ int main(int argc, char *argv[])
     // COMBING
 
     // principal matching
-    directional::principal_matching(VMeshWhole, FMeshWhole, EV, EF, FE, rawField, matching, effort);
+    directional::principal_matching(VMeshWhole, FMeshWhole, EV, EF, FE, rawField, matching, effort, singVertices, singIndices);
 
     elapsed = timer.getElapsedTime();
     std::cout << "principal matching elapsed: " << elapsed << std::endl;
 
-    // singularities
-    directional::effort_to_indices(VMeshWhole, FMeshWhole, EV, EF, effort, matching, N, singVertices, singIndices);
+    // // singularities
+    // directional::effort_to_indices(VMeshWhole, FMeshWhole, EV, EF, effort, matching, N, singVertices, singIndices);
 
-    elapsed = timer.getElapsedTime();
-    std::cout << "singularities elapsed: " << elapsed << std::endl;
+    // elapsed = timer.getElapsedTime();
+    // std::cout << "singularities elapsed: " << elapsed << std::endl;
 
     // INTEGRATION
 
     // integration
-    std::cout << "Setting up Integration #" << i << std::endl;
+    std::cout << "Setting up Integration" << std::endl;
 
     directional::IntegrationData intData(N);
     directional::setup_integration(VMeshWhole, FMeshWhole, EV, EF, FE, rawField, matching, singVertices, intData, VMeshCut, FMeshCut, combedField, combedMatching);
@@ -284,11 +287,11 @@ int main(int argc, char *argv[])
 
     // SHOWING
 
-    viewer.set_mesh(VMeshWhole, FMeshWhole, i);
-    viewer.set_field(combedField, directional::DirectionalViewer::indexed_glyph_colors(combedField), i);
+    viewer.set_mesh(VMeshWhole, FMeshWhole);
+    viewer.set_field(combedField, directional::DirectionalViewer::indexed_glyph_colors(combedField));
     viewer.set_singularities(singVertices, singIndices);
-    viewer.set_seams(combedMatching, i);
-    viewer.set_isolines(VMeshCut, FMeshCut, NFunction, i);
+    viewer.set_seams(combedMatching);
+    viewer.set_isolines(VMeshCut, FMeshCut, NFunction);
 
     // //raw field mesh
     // directional::glyph_lines_raw(VMeshWhole, FMeshWhole, combedField, directional::indexed_glyph_colors(combedField), VField, FField, CField, 1.0);
