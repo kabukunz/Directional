@@ -9,16 +9,14 @@
 
 #ifndef DIRECTIONAL_BRANCHED_ISOLINES_H
 #define DIRECTIONAL_BRANCHED_ISOLINES_H
-#include <igl/igl_inline.h>
 
+#include <igl/igl_inline.h>
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <array>
 #include <vector>
 #include <igl/remove_duplicate_vertices.h>
 #include <directional/isolines.h>
-#include <directional/visualization_schemes.h>
-
 
 namespace directional{
 
@@ -28,49 +26,46 @@ namespace directional{
 //F:          |F| x 3 face vertex indices (into V)
 //NFunction:  |V| x N branched function values
 //Output:
-//VIsolines:  vertices of isoline visualization mesh
-//FIsolines:  faces -"-
-//CIsolines:  colors -"-
+//isoV:       coordinates of isolines
+//isoE:       #E by 2 connectivity edges of isolines
+//isoN:       #E by 3 normals to isolines (normals to mesh at these lines).
+//isoOrigE    #E by 3 in (f,if,f) (if - index of edge in face opposite to vertex if) identity of halfedges in relevant faces
+//funcNum: identity of function (as NFunction #col) of the corresponding P1 (or P2) entry.
 
   void branched_isolines(const Eigen::MatrixXd& V,
                          const Eigen::MatrixXi& F,
                          const Eigen::MatrixXd& NFunction,
-                         Eigen::MatrixXd& VIsolines,
-                         Eigen::MatrixXi& FIsolines,
-                         Eigen::MatrixXd& CIsolines)
+                         Eigen::MatrixXd& isoV,
+                         Eigen::MatrixXi& isoE,
+                         Eigen::MatrixXi& isoOrigE,
+                         Eigen::MatrixXd& isoN,
+                         Eigen::VectorXi& funcNum)
   {
     
     int N = NFunction.cols();
-    Eigen::MatrixXd funcColors=directional::default_glyph_colors(8);
-    double isolineRadius=0.02;
     int jumps = (N%2 == 0 ? 2 : 1);
-    Eigen::MatrixXd isoV;
-    Eigen::MatrixXi isoE;
-    VIsolines.resize(0,3); FIsolines.resize(0,3); CIsolines.resize(0,3);
-    double l = 1.25*igl::avg_edge_length(V, F);
+    Eigen::MatrixXd isoVPart, isoNPart;
+    Eigen::MatrixXi isoEPart, isoOrigEPart;
     
-    Eigen::MatrixXd P1(0,3), P2(0,3), C(0,3);
     for (int i=0;i<NFunction.cols()/jumps;i++){
       Eigen::VectorXd currFunc = NFunction.col(i);
-      igl::isolines(V,F, currFunc, 100, isoV, isoE);
+      igl::isolines(V,F, currFunc, 100, isoVPart, isoEPart, isoOrigEPart, isoNPart);
       
-      int oldPSize = P1.rows();
-      P1.conservativeResize(P1.rows()+isoE.rows(),3);
-      P2.conservativeResize(P2.rows()+isoE.rows(),3);
-      C.conservativeResize(C.rows()+isoE.rows(),3);
-      for (int j=0;j<isoE.rows();j++){
-        P1.row(oldPSize+j)=isoV.row(isoE(j,0));
-        P2.row(oldPSize+j)=isoV.row(isoE(j,1));
-        C.row(oldPSize+j)=funcColors.row(i);
-      }
-
+      int oldVSize = isoV.rows();
+      int oldESize = isoE.rows();
+      isoV.conservativeResize(oldVSize+isoVPart.rows(),3);
+      isoE.conservativeResize(oldESize+isoEPart.rows(),2);
+      isoOrigE.conservativeResize(oldESize+isoOrigEPart.rows(),3);
+      isoN.conservativeResize(oldESize+isoNPart.rows(),3);
+      funcNum.conservativeResize(oldESize+isoEPart.rows());
+      
+      isoV.block(oldVSize,0,isoVPart.rows(),3) = isoVPart;
+      isoE.block(oldESize,0,isoEPart.rows(),2) = isoEPart.array()+oldVSize;
+      isoOrigE.block(oldESize,0,isoOrigEPart.rows(),3) = isoOrigEPart;
+      isoN.block(oldESize,0,isoNPart.rows(),3) = isoNPart;
+      funcNum.tail(isoNPart.rows()).setConstant(i);
     }
-    
-    directional::line_cylinders(P1, P2, l*isolineRadius,C,4, VIsolines, FIsolines, CIsolines);
-          
   }
-
-
 }
 
 #endif

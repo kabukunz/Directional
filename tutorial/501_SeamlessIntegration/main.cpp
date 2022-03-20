@@ -1,37 +1,31 @@
 #include <iostream>
 #include <Eigen/Core>
-#include <igl/opengl/glfw/Viewer.h>
 #include <igl/read_triangle_mesh.h>
 #include <igl/per_face_normals.h>
 #include <igl/unproject_onto_mesh.h>
 #include <igl/edge_topology.h>
 #include <igl/cut_mesh.h>
-#include <directional/visualization_schemes.h>
-#include <directional/glyph_lines_raw.h>
-#include <directional/seam_lines.h>
-#include <directional/line_cylinders.h>
 #include <directional/read_raw_field.h>
 #include <directional/write_raw_field.h>
 #include <directional/curl_matching.h>
 #include <directional/effort_to_indices.h>
-#include <directional/singularity_spheres.h>
 #include <directional/combing.h>
 #include <directional/setup_integration.h>
 #include <directional/integrate.h>
 #include <directional/cut_mesh_with_singularities.h>
+#include <directional/directional_viewer.h>
 
 
 int N;
-Eigen::MatrixXi FMeshWhole, FMeshCut, FField, FSings, FSeams;
-Eigen::MatrixXd VMeshWhole, VMeshCut, VField, VSings, VSeams;
-Eigen::MatrixXd CField, CSeams, CSings;
-Eigen::MatrixXd rawField, combedField, barycenters;
+Eigen::MatrixXi FMeshWhole, FMeshCut;
+Eigen::MatrixXd VMeshWhole, VMeshCut;
+Eigen::MatrixXd rawField, combedField;
 Eigen::VectorXd effort, combedEffort;
 Eigen::VectorXi matching, combedMatching;
 Eigen::MatrixXi EV, FE, EF;
 Eigen::VectorXi singIndices, singVertices;
 Eigen::MatrixXd cutUVFull, cutUVRot, cornerWholeUV;
-igl::opengl::glfw::Viewer viewer;
+directional::DirectionalViewer viewer;
 
 typedef enum {FIELD, ROT_INTEGRATION, FULL_INTEGRATION} ViewingModes;
 ViewingModes viewingMode=FIELD;
@@ -56,33 +50,18 @@ void setup_line_texture()
       texture_B(i,j) = texture_G(i,j) = texture_R(i,j) = 255;
 }
 
-void update_triangle_mesh()
+void update_viewer()
 {
   if (viewingMode==FIELD){
-    viewer.data_list[0].clear();
-    viewer.data_list[0].set_mesh(VMeshWhole, FMeshWhole);
-    viewer.data_list[0].set_colors(directional::default_mesh_color());
-    viewer.data_list[0].set_face_based(false);
-    viewer.data_list[0].show_texture=false;
-    viewer.data_list[0].show_lines=false;
+  
+    viewer.set_active(true,0);
+    viewer.set_active(false,1);
   } else if ((viewingMode==ROT_INTEGRATION) || (viewingMode==FULL_INTEGRATION)){
-    viewer.data_list[0].clear();
-    viewer.data_list[0].set_mesh(VMeshCut, FMeshCut);
-    viewer.data_list[0].set_colors(directional::default_mesh_color());
-    viewer.data_list[0].set_uv(viewingMode==ROT_INTEGRATION ? cutUVRot : cutUVFull);
-    viewer.data_list[0].set_texture(texture_R, texture_G, texture_B);
-    viewer.data_list[0].set_face_based(true);
-    viewer.data_list[0].show_texture=true;
-    viewer.data_list[0].show_lines=false;
+    viewer.set_uv(viewingMode==ROT_INTEGRATION ? cutUVRot : cutUVFull,1);
+    viewer.set_active(true,1);
+    viewer.set_active(false,0);
   }
 }
-
-void update_raw_field_mesh()
-{
-  for (int i=1;i<4;i++)  //hide all other meshes
-    viewer.data_list[i].show_faces=(viewingMode==FIELD);
-}
-
 
 // Handle keyboard input
 bool key_down(igl::opengl::glfw::Viewer& viewer, int key, int modifiers)
@@ -99,8 +78,7 @@ bool key_down(igl::opengl::glfw::Viewer& viewer, int key, int modifiers)
       igl::writeOBJ(TUTORIAL_SHARED_PATH "/horsers-param-full-seamless.obj", VMeshCut, FMeshCut, emptyMat, emptyMat, cutUVFull, FMeshCut);
       break;
   }
-  update_triangle_mesh();
-  update_raw_field_mesh();
+  update_viewer();
   return true;
 }
 
@@ -117,14 +95,11 @@ int main()
   igl::readOFF(TUTORIAL_SHARED_PATH "/horsers.off", VMeshWhole, FMeshWhole);
   directional::read_raw_field(TUTORIAL_SHARED_PATH "/horsers-cf.rawfield", N, rawField);
   igl::edge_topology(VMeshWhole, FMeshWhole, EV, FE, EF);
-  igl::barycenter(VMeshWhole, FMeshWhole, barycenters);
-  
+
   //combing and cutting
   Eigen::VectorXd curlNorm;
-  directional::curl_matching(VMeshWhole, FMeshWhole,EV, EF, FE, rawField, matching, effort, curlNorm);
+  directional::curl_matching(VMeshWhole, FMeshWhole,EV, EF, FE, rawField, matching, effort, curlNorm,singVertices, singIndices);
   std::cout<<"curlNorm max: "<<curlNorm.maxCoeff()<<std::endl;
-  directional::effort_to_indices(VMeshWhole,FMeshWhole,EV, EF, effort,matching, N,singVertices, singIndices);
-  
 
   directional::IntegrationData intData(N);
   std::cout<<"Setting up Integration"<<std::endl;
@@ -145,45 +120,23 @@ int main()
   cutUVFull=cutUVFull.block(0,0,cutUVFull.rows(),2);
   std::cout<<"Done!"<<std::endl;
   
-  //raw field mesh
-  viewer.append_mesh();
-  directional::glyph_lines_raw(VMeshWhole, FMeshWhole, combedField, directional::indexed_glyph_colors(combedField), VField, FField, CField,1.0);
+  //viewer cut (texture) and whole (field) meshes
+  viewer.set_mesh(VMeshWhole, FMeshWhole,0);
+  viewer.set_mesh(VMeshCut, FMeshCut,1);
+  viewer.set_field(rawField);
+  viewer.set_singularities(singVertices, singIndices);
+  viewer.set_seams(combedMatching);
+  viewer.set_texture(texture_R,texture_G,texture_B,1);
   
-  viewer.data_list[1].clear();
-  viewer.data_list[1].set_mesh(VField, FField);
-  viewer.data_list[1].set_colors(CField);
-  viewer.data_list[1].show_faces = true;
-  viewer.data_list[1].show_lines = false;
+  viewer.toggle_texture(false,0);
+  viewer.toggle_field(true,0);
+  viewer.toggle_seams(true,0);
   
-  //singularity mesh
-  viewer.append_mesh();
-  directional::singularity_spheres(VMeshWhole, FMeshWhole, N, singVertices, singIndices, VSings, FSings, CSings,2.5);
+  viewer.toggle_texture(true,1);
+  viewer.toggle_field(false,1);
+  viewer.toggle_seams(false,1);
   
-  viewer.data_list[2].clear();
-  viewer.data_list[2].set_mesh(VSings, FSings);
-  viewer.data_list[2].set_colors(CSings);
-  viewer.data_list[2].show_faces = true;
-  viewer.data_list[2].show_lines = false;
-  
-  //seams mesh
-  viewer.append_mesh();
-  
-  Eigen::VectorXi isSeam=Eigen::VectorXi::Zero(EV.rows());
-  for (int i=0;i<FE.rows();i++)
-    for (int j=0;j<3;j++)
-      if (intData.face2cut(i,j))
-        isSeam(FE(i,j))=1;
-  directional::seam_lines(VMeshWhole, FMeshWhole, EV, combedMatching, VSeams, FSeams, CSeams,2.5);
-  
-  viewer.data_list[3].clear();
-  viewer.data_list[3].set_mesh(VSeams, FSeams);
-  viewer.data_list[3].set_colors(CSeams);
-  viewer.data_list[3].show_faces = true;
-  viewer.data_list[3].show_lines = false;
-  
-  update_triangle_mesh();
-  update_raw_field_mesh();
-  viewer.data_list[0].show_lines=false;
+  update_viewer();
   
   viewer.callback_key_down = &key_down;
   viewer.launch();

@@ -14,7 +14,7 @@
 #include <igl/per_face_normals.h>
 #include <igl/avg_edge_length.h>
 #include <igl/jet.h>
-#include <directional/visualization_schemes.h>
+#include <igl/per_vertex_normals.h>
 #include <directional/representative_to_raw.h>
 #include <directional/point_spheres.h>
 
@@ -36,18 +36,21 @@ namespace directional
                                       const int N,
                                       const Eigen::VectorXi& singVertices,
                                       const Eigen::VectorXi& singIndices,
+                                      const Eigen::MatrixXd singularityColors,
                                       Eigen::MatrixXd& singV,
                                       Eigen::MatrixXi& singF,
                                       Eigen::MatrixXd& singC,
-                                      const double radiusRatio=1.25)
+                                      const double radiusRatio)
   
   {
 
     Eigen::MatrixXd points(singVertices.size(), 3);
     Eigen::MatrixXd colors(singIndices.size(), 3);
-    Eigen::MatrixXd singularityColors=directional::default_singularity_colors(N);
     Eigen::MatrixXd positiveColors=singularityColors.block(singularityColors.rows()/2,0,singularityColors.rows()/2,3);
     Eigen::MatrixXd negativeColors=singularityColors.block(0,0,singularityColors.rows()/2,3);
+    
+    Eigen::MatrixXd vertexNormals;
+    igl::per_vertex_normals(V,F,vertexNormals);
     for (int i = 0; i < singIndices.rows(); i++)
     {
       points.row(i) = V.row(singVertices(i));
@@ -60,7 +63,7 @@ namespace directional
       
     }
     double radius = radiusRatio*igl::avg_edge_length(V, F)/5.0;
-    directional::point_spheres(points, radius, colors, 8, singV, singF, singC);
+    directional::point_spheres(points, vertexNormals, radius, colors, 8, singV, singF, singC);
   
   }
   
