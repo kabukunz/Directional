@@ -6,14 +6,11 @@
 #include <igl/unproject_onto_mesh.h>
 #include <igl/edge_topology.h>
 #include <igl/cut_mesh.h>
-<<<<<<< HEAD
 #include <igl/Timer.h>
 #include <directional/visualization_schemes.h>
 #include <directional/glyph_lines_raw.h>
 #include <directional/seam_lines.h>
 #include <directional/line_cylinders.h>
-=======
->>>>>>> be724834117231330932107c7a52a1ca79a2d10f
 #include <directional/read_raw_field.h>
 #include <directional/write_raw_field.h>
 #include <directional/curl_matching.h>
@@ -33,32 +30,6 @@
 
 int N;
 int currN = 0;
-<<<<<<< HEAD
-Eigen::MatrixXi FMeshWhole, FMeshCut, FField, FSings, FSeams, FIso;
-Eigen::MatrixXd VMeshWhole, VMeshCut, VField, VSings, VSeams, VIso;
-Eigen::MatrixXd CField, CSeams, CSings, CIso;
-Eigen::MatrixXd rawField, combedField;
-Eigen::VectorXd effort, combedEffort;
-Eigen::VectorXi matching, combedMatching;
-Eigen::MatrixXi EV, FE, EF;
-Eigen::VectorXi DPolyMesh;
-Eigen::MatrixXi FPolyMesh;
-Eigen::MatrixXd VPolyMesh;
-Eigen::VectorXi singIndices, singVertices;
-Eigen::MatrixXd NFunction, NCornerFunction;
-igl::opengl::glfw::Viewer viewer;
-igl::Timer timer;
-// std::string objname = std::string("aqua-center");
-std::string infilename, rawfieldname, outfilename;
-double elapsed;
-
-typedef enum
-{
-    FIELD,
-    INTEGRATION
-} ViewingModes;
-ViewingModes viewingMode = FIELD;
-=======
 Eigen::MatrixXi FMeshWhole, FMeshCut[NUM_N];
 Eigen::MatrixXd VMeshWhole, VMeshCut[NUM_N];
 Eigen::MatrixXd rawField[NUM_N], combedField[NUM_N];
@@ -74,14 +45,9 @@ directional::DirectionalViewer viewer;
 
 typedef enum {FIELD, INTEGRATION} ViewingModes;
 ViewingModes viewingMode=FIELD;
->>>>>>> be724834117231330932107c7a52a1ca79a2d10f
 
 void update_viewer()
 {
-<<<<<<< HEAD
-    for (int i = 1; i <= 3; i++) //hide all other meshes
-        viewer.data_list[i].show_faces = (viewingMode == FIELD);
-=======
   for (int i=0;i<NUM_N;i++){
     viewer.toggle_field(false,i);
     viewer.toggle_singularities(false,i);
@@ -100,19 +66,9 @@ void update_viewer()
     viewer.toggle_isolines(true,currN);
   }
 }
->>>>>>> be724834117231330932107c7a52a1ca79a2d10f
 
     viewer.data_list[4].show_faces = (viewingMode == INTEGRATION);
 
-<<<<<<< HEAD
-    if (viewingMode == FIELD)
-    {
-        viewer.data_list[1].clear();
-        viewer.data_list[1].set_mesh(VField, FField);
-        viewer.data_list[1].set_colors(CField);
-        viewer.data_list[1].show_faces = true;
-        viewer.data_list[1].show_lines = false;
-=======
 // Handle keyboard input
 bool key_down(igl::opengl::glfw::Viewer& viewer, int key, int modifiers)
 {
@@ -126,7 +82,6 @@ bool key_down(igl::opengl::glfw::Viewer& viewer, int key, int modifiers)
   update_viewer();
   return true;
 }
->>>>>>> be724834117231330932107c7a52a1ca79a2d10f
 
         viewer.data_list[2].clear();
         viewer.data_list[2].set_mesh(VSings, FSings);
@@ -134,40 +89,6 @@ bool key_down(igl::opengl::glfw::Viewer& viewer, int key, int modifiers)
         viewer.data_list[2].show_faces = true;
         viewer.data_list[2].show_lines = false;
 
-<<<<<<< HEAD
-        viewer.data_list[3].clear();
-        viewer.data_list[3].set_mesh(VSeams, FSeams);
-        viewer.data_list[3].set_colors(CSeams);
-        viewer.data_list[3].show_faces = true;
-        viewer.data_list[3].show_lines = false;
-    }
-    else
-    {
-        viewer.data_list[4].clear();
-        viewer.data_list[4].set_mesh(VIso, FIso);
-        viewer.data_list[4].set_colors(CIso);
-        viewer.data_list[4].show_faces = true;
-        viewer.data_list[4].show_lines = false;
-    }
-}
-
-// Handle keyboard input
-bool key_down(igl::opengl::glfw::Viewer &viewer, int key, int modifiers)
-{
-    switch (key)
-    {
-        // Select vector
-    case '1':
-        viewingMode = FIELD;
-        break;
-    case '2':
-        viewingMode = INTEGRATION;
-        break;
-        // case '3': currN=(currN+1)%NUM_N; break;
-    }
-    update_raw_field_mesh();
-    return true;
-=======
 int main()
 {
   std::cout <<
@@ -219,7 +140,6 @@ int main()
   update_viewer();
   viewer.callback_key_down = &key_down;
   viewer.launch();
->>>>>>> be724834117231330932107c7a52a1ca79a2d10f
 }
 
 int main(int argc, char *argv[])
