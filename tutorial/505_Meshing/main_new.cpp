@@ -99,19 +99,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // std::string objname = std::string("aqua-center");
-
     std::string cmdlineFile = argv[1];
-
-    // std::string dataDir = std::string("C:\\Users\\kabukunz\\Developer\\Content\\Data\\");
-    std::string dataDir = std::string("/Users/max/Developer/Content/Data/");
-
-    infilename = dataDir + cmdlineFile + ".off";
-    // rawfieldname = dataDir + cmdlineFile + "-" + std::to_string(N) + ".rawfield";
-    // outfilename = dataDir + cmdlineFile + "-" + std::to_string(N) + "-generated.off";
-    rawfieldname = dataDir + cmdlineFile + ".rawfield";
-    outfilename = dataDir + cmdlineFile + "-generated.off";
-
+    infilename = cmdlineFile + ".off";
+    rawfieldname = cmdlineFile + ".rawfield";
+    outfilename = cmdlineFile + "-generated.off";
 
     igl::readOFF(infilename, VMeshWhole, FMeshWhole);
     directional::read_raw_field(rawfieldname, N, rawField);

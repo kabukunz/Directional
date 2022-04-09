@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
 project(301_PowerFields)
 
-add_executable(${PROJECT_NAME}_bin main.cpp)
+add_executable(${PROJECT_NAME}_bin main_new.cpp)
 target_link_libraries(${PROJECT_NAME}_bin igl::core igl::opengl_glfw tutorials)
