@@ -19,194 +19,114 @@
 #include <directional/directional_viewer.h>
 #include "polygonal_write_OFF.h"
 
-#include <igl/Timer.h>
-#include <string>
+#define NUM_N 3
 
-int N = 4;
-Eigen::MatrixXi FMeshWhole, FMeshCut, FField, FSings, FSeams, FIso;
-Eigen::MatrixXd VMeshWhole, VMeshCut, VField, VSings, VSeams, VIso;
-Eigen::MatrixXd CField, CSeams, CSings, CIso;
-Eigen::MatrixXd rawField, combedField;
-Eigen::VectorXd effort, combedEffort;
-Eigen::VectorXi matching, combedMatching;
+int N[NUM_N];
+int currN = 0;
+Eigen::MatrixXi FMeshWhole, FMeshCut[NUM_N];
+Eigen::MatrixXd VMeshWhole, VMeshCut[NUM_N];
+Eigen::MatrixXd rawField[NUM_N], combedField[NUM_N];
+Eigen::VectorXd effort[NUM_N], combedEffort[NUM_N];
+Eigen::VectorXi matching[NUM_N], combedMatching[NUM_N];
 Eigen::MatrixXi EV, FE, EF;
-Eigen::VectorXi DPolyMesh;
-Eigen::MatrixXi FPolyMesh;
-Eigen::MatrixXd VPolyMesh;
-Eigen::VectorXi singIndices, singVertices;
-Eigen::MatrixXd NFunction, NCornerFunction;
+Eigen::VectorXi DPolyMesh[NUM_N];
+Eigen::MatrixXi FPolyMesh[NUM_N];
+Eigen::MatrixXd VPolyMesh[NUM_N];
+Eigen::VectorXi singIndices[NUM_N], singVertices[NUM_N];
+Eigen::MatrixXd NFunction[NUM_N], NCornerFunction[NUM_N];
 directional::DirectionalViewer viewer;
 
-igl::Timer timer;
-std::string infilename, rawfieldname, outfilename;
-double elapsed;
-
-typedef enum
-{
-    FIELD,
-    INTEGRATION
-} ViewingModes;
-ViewingModes viewingMode = FIELD;
+typedef enum {FIELD, INTEGRATION} ViewingModes;
+ViewingModes viewingMode=FIELD;
 
 void update_viewer()
 {
-    viewer.toggle_field(false);
-    viewer.toggle_singularities(false);
-    viewer.toggle_seams(false);
-    viewer.toggle_isolines(false);
-    
-    if (viewingMode == FIELD)
-    {
-        viewer.toggle_field(true);
-        viewer.toggle_singularities(true);
-        viewer.toggle_seams(true);
-        viewer.toggle_isolines(false);
-    }
-    else
-    {
-        viewer.toggle_field(false);
-        viewer.toggle_singularities(false);
-        viewer.toggle_seams(false);
-        viewer.toggle_isolines(true);
-    }
+  for (int i=0;i<NUM_N;i++){
+    viewer.toggle_field(false,i);
+    viewer.toggle_singularities(false,i);
+    viewer.toggle_seams(false,i);
+    viewer.toggle_isolines(false,i);
+  }
+  if (viewingMode==FIELD){
+    viewer.toggle_field(true,currN);
+    viewer.toggle_singularities(true,currN);
+    viewer.toggle_seams(true,currN);
+    viewer.toggle_isolines(false,currN);
+  } else {
+    viewer.toggle_field(false,currN);
+    viewer.toggle_singularities(false,currN);
+    viewer.toggle_seams(false,currN);
+    viewer.toggle_isolines(true,currN);
+  }
 }
+
 
 // Handle keyboard input
-bool key_down(igl::opengl::glfw::Viewer &viewer, int key, int modifiers)
+bool key_down(igl::opengl::glfw::Viewer& viewer, int key, int modifiers)
 {
-    switch (key)
-    {
-        // Select vector
-    case '1':
-        viewingMode = FIELD;
-        break;
-    case '2':
-        viewingMode = INTEGRATION;
-        break;
-    }
-    update_viewer();
-    return true;
+  switch (key)
+  {
+      // Select vector
+    case '1': viewingMode = FIELD; break;
+    case '2': viewingMode = INTEGRATION; break;
+    case '3': currN=(currN+1)%NUM_N; break;
+  }
+  update_viewer();
+  return true;
 }
 
 
-int main(int argc, char *argv[])
+int main()
 {
-    // check args
-    if (argc < 2)
-    {
-        // Tell the user how to run the program
-        std::cerr << "Usage: " << argv[0] << " <off-file>" << std::endl;
-        return 1;
-    }
+  std::cout <<
+  "  1  Loaded field" << std::endl <<
+  "  2  Show isoline mesh" << std::endl <<
+  "  3  change between different N" << std::endl;
+  
+  igl::readOFF(TUTORIAL_SHARED_PATH "/vase.off", VMeshWhole, FMeshWhole);
+  directional::read_raw_field(TUTORIAL_SHARED_PATH "/vase-4.rawfield", N[0], rawField[0]);
+  directional::read_raw_field(TUTORIAL_SHARED_PATH "/vase-7.rawfield", N[1], rawField[1]);
+  directional::read_raw_field(TUTORIAL_SHARED_PATH "/vase-11.rawfield", N[2], rawField[2]);
+  igl::edge_topology(VMeshWhole, FMeshWhole, EV, FE, EF);
+  
+  bool verbose=true;
+  
+  //combing and cutting
+  for (int i=0;i<NUM_N;i++){
+    directional::principal_matching(VMeshWhole, FMeshWhole,EV, EF, FE, rawField[i], matching[i], effort[i],singVertices[i], singIndices[i]);
 
-    // std::string objname = std::string("aqua-center");
-
-    std::string cmdlineFile = argv[1];
-
-    // std::string dataDir = std::string("C:\\Users\\kabukunz\\Developer\\Content\\Data\\");
-    std::string dataDir = std::string("/Users/max/Developer/Content/Data/");
-
-    infilename = dataDir + cmdlineFile + ".off";
-    // rawfieldname = dataDir + cmdlineFile + "-" + std::to_string(N) + ".rawfield";
-    // outfilename = dataDir + cmdlineFile + "-" + std::to_string(N) + "-generated.off";
-    rawfieldname = dataDir + cmdlineFile + ".rawfield";
-    outfilename = dataDir + cmdlineFile + "-generated.off";
-
-
-    igl::readOFF(infilename, VMeshWhole, FMeshWhole);
-    directional::read_raw_field(rawfieldname, N, rawField);
-    igl::edge_topology(VMeshWhole, FMeshWhole, EV, FE, EF);
-
-    std::cout << "  1  Loaded field" << std::endl
-              << "  2  Show isoline mesh" << std::endl;
-
-    bool verbose = true;
-
-    // TODO: rawfield generation
-
-    // TIMER
-    timer.start();
-
-    // COMBING
-
-    // principal matching
-    directional::principal_matching(VMeshWhole, FMeshWhole, EV, EF, FE, rawField, matching, effort, singVertices, singIndices);
-
-    elapsed = timer.getElapsedTime();
-    std::cout << "principal matching elapsed: " << elapsed << std::endl;
-
-    // // singularities
-    // directional::effort_to_indices(VMeshWhole, FMeshWhole, EV, EF, effort, matching, N, singVertices, singIndices);
-
-    // elapsed = timer.getElapsedTime();
-    // std::cout << "singularities elapsed: " << elapsed << std::endl;
-
-    // INTEGRATION
-
-    // integration
-    std::cout << "Setting up Integration" << std::endl;
-
-    directional::IntegrationData intData(N);
-    directional::setup_integration(VMeshWhole, FMeshWhole, EV, EF, FE, rawField, matching, singVertices, intData, VMeshCut, FMeshCut, combedField, combedMatching);
-
-    elapsed = timer.getElapsedTime();
-    std::cout << "Integration setup elapsed: " << elapsed << std::endl;
-
-    intData.verbose = false;
-    intData.integralSeamless = true;
-    intData.roundSeams = false;
-
-    std::cout << "SOLVING INTEGRATION FOR N=" << N << std::endl;
-
-    directional::integrate(VMeshWhole, FMeshWhole, FE, combedField, intData, VMeshCut, FMeshCut, NFunction, NCornerFunction);
-
-    std::cout << "DONE!" << std::endl;
-
-    elapsed = timer.getElapsedTime();
-    std::cout << "Integration solve elapsed: " << elapsed << std::endl;
-
-    // MESHING
-
-    // The meshing unit is independent from the integration unit, and can be potentially used with external functions; one should fill the MeshFunctionIsolinesData structure with the input, and call mesh_function_isolines().
-
-    // setting up mesh data from itnegration data
+    directional::IntegrationData intData(N[i]);
+    std::cout<<"Setting up Integration #"<<i<<std::endl;
+    directional::setup_integration(VMeshWhole, FMeshWhole,  EV, EF, FE, rawField[i], matching[i], singVertices[i], intData, VMeshCut[i], FMeshCut[i], combedField[i], combedMatching[i]);
+    
+    intData.verbose=false;
+    intData.integralSeamless=true;
+    intData.roundSeams=false;
+  
+    std::cout<<"Solving integration for N="<<N[i]<<std::endl;
+    directional::integrate(VMeshWhole, FMeshWhole, FE, combedField[i],  intData, VMeshCut[i], FMeshCut[i], NFunction[i],NCornerFunction[i]);
+    
+    std::cout<<"Done!"<<std::endl;
+    
+    //setting up mesh data from itnegration data
     directional::MeshFunctionIsolinesData mfiData;
-    directional::setup_mesh_function_isolines(VMeshCut, FMeshCut, intData, mfiData);
-
-    elapsed = timer.getElapsedTime();
-    std::cout << "meshing setup elapsed: " << elapsed << std::endl;
-
-    // meshing
-    directional::mesh_function_isolines(VMeshWhole, FMeshWhole, EV, EF, FE, mfiData, verbose, VPolyMesh, DPolyMesh, FPolyMesh);
-
-    elapsed = timer.getElapsedTime();
-    std::cout << "meshing elapsed: " << elapsed << std::endl;
-
-    // SAVING
-
-    // saving
-    hedra::polygonal_write_OFF(outfilename, VPolyMesh, DPolyMesh, FPolyMesh);
-
-    std::cout << "SAVED!" << std::endl;
-
-    elapsed = timer.getElapsedTime();
-    std::cout << "saving elapsed: " << elapsed << std::endl;
-
-    // TIME
-
-    timer.stop();
-    elapsed = timer.getElapsedTime();
-    std::cout << "Total elapsed: " << elapsed << std::endl;
-
-    // SHOWING
-
-    viewer.set_mesh(VMeshWhole, FMeshWhole);
-    viewer.set_field(combedField, directional::DirectionalViewer::indexed_glyph_colors(combedField));
-    viewer.set_singularities(singVertices, singIndices);
-    viewer.set_seams(combedMatching);
-    viewer.set_isolines(VMeshCut, FMeshCut, NFunction);
-
-    update_viewer();
-    viewer.callback_key_down = &key_down;
-    viewer.launch();
+    directional::setup_mesh_function_isolines(VMeshCut[i], FMeshCut[i], intData, mfiData);
+    
+    //meshing and saving
+    directional::mesh_function_isolines(VMeshWhole, FMeshWhole,EV, EF, FE, mfiData,  verbose, VPolyMesh[i], DPolyMesh[i], FPolyMesh[i]);
+    hedra::polygonal_write_OFF(TUTORIAL_SHARED_PATH "/vase-"+std::to_string(N[i])+"-generated.off", VPolyMesh[i], DPolyMesh[i], FPolyMesh[i]);
+    
+    
+    viewer.set_mesh(VMeshWhole, FMeshWhole,i);
+    viewer.set_field(combedField[i], directional::DirectionalViewer::indexed_glyph_colors(combedField[i]), i);
+    viewer.set_singularities(singVertices[i], singIndices[i]);
+    viewer.set_seams(combedMatching[i], i);
+    viewer.set_isolines(VMeshCut[i], FMeshCut[i],NFunction[i],i);
+  }
+  
+  update_viewer();
+  viewer.callback_key_down = &key_down;
+  viewer.launch();
 }
+
+

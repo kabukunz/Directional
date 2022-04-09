@@ -7,12 +7,12 @@ message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 ### Choose which chapters to compile
-# option(TUTORIALS_CHAPTER1 "Compile chapter 1" ON)
-# option(TUTORIALS_CHAPTER2 "Compile chapter 2" ON)
-# option(TUTORIALS_CHAPTER3 "Compile chapter 3" ON)
-# option(TUTORIALS_CHAPTER4 "Compile chapter 4" ON)
+option(TUTORIALS_CHAPTER1 "Compile chapter 1" ON)
+option(TUTORIALS_CHAPTER2 "Compile chapter 2" ON)
+option(TUTORIALS_CHAPTER3 "Compile chapter 3" ON)
+option(TUTORIALS_CHAPTER4 "Compile chapter 4" ON)
 option(TUTORIALS_CHAPTER5 "Compile chapter 5" ON)
-# option(TUTORIALS_CHAPTER6 "Compile chapter 6" ON)
+option(TUTORIALS_CHAPTER6 "Compile chapter 6" ON)
 
 
 
@@ -80,10 +80,10 @@ endif()
 
 # Chapter 5
 if(TUTORIALS_CHAPTER5)
-#   add_subdirectory("501_SeamlessIntegration")
-#   add_subdirectory("502_DifferentOrders")
-#   add_subdirectory("503_SeamsSingsRounding")
-#   add_subdirectory("504_LinearReductions")
+  add_subdirectory("501_SeamlessIntegration")
+  add_subdirectory("502_DifferentOrders")
+  add_subdirectory("503_SeamsSingsRounding")
+  add_subdirectory("504_LinearReductions")
   add_subdirectory("505_Meshing")
 endif()
 
