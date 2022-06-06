@@ -105,6 +105,11 @@ int main(int argc, char *argv[])
     outfilename = cmdlineFile + "-generated.off";
 
     igl::readOFF(infilename, VMeshWhole, FMeshWhole);
+
+    // RAW FIELD
+    
+    // TODO: rawfield generation
+
     directional::read_raw_field(rawfieldname, N, rawField);
     igl::edge_topology(VMeshWhole, FMeshWhole, EV, FE, EF);
 
@@ -113,7 +118,6 @@ int main(int argc, char *argv[])
 
     bool verbose = true;
 
-    // TODO: rawfield generation
 
     // TIMER
     timer.start();
@@ -125,12 +129,6 @@ int main(int argc, char *argv[])
 
     elapsed = timer.getElapsedTime();
     std::cout << "principal matching elapsed: " << elapsed << std::endl;
-
-    // // singularities
-    // directional::effort_to_indices(VMeshWhole, FMeshWhole, EV, EF, effort, matching, N, singVertices, singIndices);
-
-    // elapsed = timer.getElapsedTime();
-    // std::cout << "singularities elapsed: " << elapsed << std::endl;
 
     // INTEGRATION
 
