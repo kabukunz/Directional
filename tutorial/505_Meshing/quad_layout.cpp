@@ -99,27 +99,30 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    std::cout << "  1  Loaded field" << std::endl
-              << "  2  Show isoline mesh" << std::endl;
-
     std::string cmdlineFile = argv[1];
     infilename = cmdlineFile + ".off";
     rawfieldname = cmdlineFile + ".rawfield";
     outfilename = cmdlineFile + "-generated.off";
 
-    // TIMER
-    timer.start();
-
     igl::readOFF(infilename, VMeshWhole, FMeshWhole);
-    directional::read_raw_field(rawfieldname, N, rawField);
 
-    elapsed = timer.getElapsedTime();
-    std::cout << "Read mesh and field elapsed: " << elapsed << std::endl;
+    // RAW FIELD
+    
+    // TODO: rawfield generation
+
+    directional::read_raw_field(rawfieldname, N, rawField);
+    igl::edge_topology(VMeshWhole, FMeshWhole, EV, FE, EF);
+
+    std::cout << "  1  Loaded field" << std::endl
+              << "  2  Show isoline mesh" << std::endl;
 
     bool verbose = true;
 
+
+    // TIMER
+    timer.start();
+
     // COMBING
-    igl::edge_topology(VMeshWhole, FMeshWhole, EV, FE, EF);
 
     // principal matching
     directional::principal_matching(VMeshWhole, FMeshWhole, EV, EF, FE, rawField, matching, effort, singVertices, singIndices);
@@ -138,40 +141,53 @@ int main(int argc, char *argv[])
     elapsed = timer.getElapsedTime();
     std::cout << "Integration setup elapsed: " << elapsed << std::endl;
 
-    intData.verbose = false;
-    intData.integralSeamless = true;
-    intData.roundSeams = false;
+    // intData.verbose = false;
+    // intData.integralSeamless = true;
+    // intData.roundSeams = false;
 
-    std::cout << "SOLVING INTEGRATION FOR N=" << N << std::endl;
+    // std::cout << "SOLVING INTEGRATION FOR N=" << N << std::endl;
 
-    directional::integrate(VMeshWhole, FMeshWhole, FE, combedField, intData, VMeshCut, FMeshCut, NFunction, NCornerFunction);
+    // directional::integrate(VMeshWhole, FMeshWhole, FE, combedField, intData, VMeshCut, FMeshCut, NFunction, NCornerFunction);
 
-    std::cout << "DONE!" << std::endl;
+    // std::cout << "DONE!" << std::endl;
 
-    elapsed = timer.getElapsedTime();
-    std::cout << "Integration solve elapsed: " << elapsed << std::endl;
+    // elapsed = timer.getElapsedTime();
+    // std::cout << "Integration solve elapsed: " << elapsed << std::endl;
 
-    // MESHING
+    // // MESHING
 
-    // The meshing unit is independent from the integration unit, and can be potentially used with external functions; one should fill the MeshFunctionIsolinesData structure with the input, and call mesh_function_isolines().
+    // // The meshing unit is independent from the integration unit, and can be potentially used with external functions; one should fill the MeshFunctionIsolinesData structure with the input, and call mesh_function_isolines().
 
-    // setting up mesh data from itnegration data
-    directional::MeshFunctionIsolinesData mfiData;
-    directional::setup_mesh_function_isolines(VMeshCut, FMeshCut, intData, mfiData);
+    // // setting up mesh data from itnegration data
+    // directional::MeshFunctionIsolinesData mfiData;
+    // directional::setup_mesh_function_isolines(VMeshCut, FMeshCut, intData, mfiData);
 
-    elapsed = timer.getElapsedTime();
-    std::cout << "meshing setup elapsed: " << elapsed << std::endl;
+    // elapsed = timer.getElapsedTime();
+    // std::cout << "meshing setup elapsed: " << elapsed << std::endl;
 
-    // meshing
-    directional::mesh_function_isolines(VMeshWhole, FMeshWhole, EV, EF, FE, mfiData, verbose, VPolyMesh, DPolyMesh, FPolyMesh);
+    // // meshing
+    // directional::mesh_function_isolines(VMeshWhole, FMeshWhole, EV, EF, FE, mfiData, verbose, VPolyMesh, DPolyMesh, FPolyMesh);
 
-    elapsed = timer.getElapsedTime();
-    std::cout << "meshing elapsed: " << elapsed << std::endl;
+    // elapsed = timer.getElapsedTime();
+    // std::cout << "meshing elapsed: " << elapsed << std::endl;
 
     // SAVING
 
+    // mesh degree
+    Eigen::VectorXi D;
+    auto F = FMeshCut;
+    D.resize(F.rows());
+
+    for (long i = 0; i < F.rows(); i++)
+        D(i) = F.row(i).size();
+
+    Eigen::VectorXi DPolyMesh = D;
+
     // saving
-    hedra::polygonal_write_OFF(outfilename, VPolyMesh, DPolyMesh, FPolyMesh);
+    hedra::polygonal_write_OFF(outfilename, VMeshCut, DPolyMesh, FMeshCut);
+
+    Eigen::MatrixXd emptyMat;
+    // igl::writeOBJ(TUTORIAL_SHARED_PATH "/horsers-param-rot-seamless.obj", VMeshCut, FMeshCut, emptyMat,     
 
     std::cout << "SAVED!" << std::endl;
 
