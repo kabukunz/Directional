@@ -138,7 +138,11 @@ int main(int argc, char *argv[])
     elapsed = timer.getElapsedTime();
     std::cout << "Integration setup elapsed: " << elapsed << std::endl;
 
-    intData.verbose = false;
+    // verbose
+    // full translational seams
+    // pure quad mesh
+
+    intData.verbose = true;
     intData.integralSeamless = true;
     intData.roundSeams = false;
 
